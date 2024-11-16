@@ -3,77 +3,58 @@ import java.awt.event.KeyListener;
 import java.text.DecimalFormat;
 
 import org.apache.commons.math3.complex.Quaternion;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-
-import javafx.geometry.Point2D;
 
 public class Airplane implements KeyListener {
   private static final double EPSILON = 0.0001;
   private static final DecimalFormat df = new DecimalFormat("0.00");
 
-  private Quaternion nose = new Quaternion(0, 1, 0, 0);
-  private Quaternion wing = new Quaternion(0, 0, 1, 0);
-  private Quaternion normal = new Quaternion(0, 0, 0, 1);
-  
+  private Quaternion roll = new Quaternion(0, 1, 0, 0);
+  private Quaternion pitch = new Quaternion(0, 0, 1, 0);
+  private Quaternion yaw = new Quaternion(0, 0, 0, 1);
+  private Quaternion craft = new Quaternion(0, 1, 0, 0);
+
   public Airplane roll(double angle) {
-    rotateAircraft(QUtil.create(angle, nose));
+    Quaternion q = QUtil.create(angle, roll);
+    craft = craft.multiply(q);
     return this;
   }
   
   public Airplane pitch(double angle) {
-    rotateAircraft(QUtil.create(-angle, wing));
+    Quaternion q = QUtil.create(-angle, pitch);
+    craft = craft.multiply(q);
     return this;
   }
   
   public Airplane yaw(double angle) {
-    rotateAircraft(QUtil.create(angle, normal));
+    Quaternion q = QUtil.create(angle, yaw);
+    craft = craft.multiply(q);
     return this;
   }
   
-  private void rotateAircraft(Quaternion rotator) {
-    nose = QUtil.rotate(nose, rotator);
-    wing = QUtil.rotate(wing, rotator);
-    normal = QUtil.rotate(normal, rotator);
+  private Quaternion rotateAircraft() {
+    return craft;
   }
   
-  public Orientation getOrientation() {
-    Orientation o = new Orientation();
-    o.roll = angle(new Point2D(wing.getQ2(), wing.getQ3()), new Point2D(1, 0));
-    o.pitch = -angle(new Point2D(normal.getQ1(), normal.getQ3()), new Point2D(0, 1));
-//    o.pitch = angle(new Vector3D(normal.getQ1(), normal.getQ2(), normal.getQ3()), new Vector3D(0, 0, 1));
-    if (Math.abs(o.pitch - 90.0) < EPSILON) {
-      o.roll = 0;
-      o.yaw = angle(new Point2D(normal.getQ1(), normal.getQ2()), new Point2D(-1, 0));
-    } else if (Math.abs(o.pitch + 90.0) < EPSILON) {
-      o.roll = 0;
-      o.yaw = angle(new Point2D(normal.getQ1(), normal.getQ2()), new Point2D(-1, 0));
-    } else {
-      o.yaw = angle(new Point2D(nose.getQ1(), nose.getQ2()), new Point2D(1, 0));
-    }
-    return o;
-  }
+  public void getOrientation() {
+    Quaternion o = rotateAircraft();
+    System.out.println("quaternion: " + o);
 
-  public double angle(Point2D a, Point2D b) {
-    if (Math.abs(a.getX()) < EPSILON && Math.abs(a.getY()) < EPSILON) {
-      return Double.NaN;
-    }
-    double dot = a.getX()*b.getX()+a.getY()*b.getY();
-    double det = a.getX()*b.getY()-a.getY()*b.getX();
-    return Math.toDegrees(Math.atan2(det, dot));
-  }
-
-  public double angle(Vector3D a, Vector3D b) {
-    return Math.toDegrees(Math.atan2(a.crossProduct(b).getNorm(), a.dotProduct(b)));
+    double w = o.getQ0();
+    double x = o.getQ1();
+    double y = o.getQ2();
+    double z = o.getQ3();
+    double yaw = Math.toDegrees(Math.atan2(2.0*(w*z + x*y), w*w+x*x-y*y-z*z));
+    double pitch = Math.toDegrees(Math.asin(-2.0*(x*z - w*y)));
+    double roll = Math.toDegrees(Math.atan2(2.0*(z*y + w*x), w*w - x*x - y*y + z*z));
+    System.out.println("y p r: " + yaw + ", " + pitch + ", " + roll);
   }
 
   @Override
   public void keyTyped(KeyEvent e) {
-
   }
 
   @Override
   public void keyReleased(KeyEvent e) {
-
   }
 
   @Override
@@ -98,8 +79,8 @@ public class Airplane implements KeyListener {
       yaw(5.0);
       break;
     }
-    getOrientation().print();
-    System.out.println(this);
+    getOrientation();
+//    System.out.println(this);
   }
 
   public class Orientation {
@@ -122,6 +103,6 @@ public class Airplane implements KeyListener {
 
   @Override
   public String toString() {
-    return getQStr(nose) + " " + getQStr(wing) + " " + getQStr(normal);
+    return "";
   }
 }

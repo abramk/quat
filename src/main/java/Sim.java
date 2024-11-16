@@ -5,7 +5,7 @@ public class Sim {
 
   public static void main(String[] args) throws Exception {
     Airplane airplane = new Airplane();
-    airplane.getOrientation().print();
+    airplane.getOrientation();
 //    System.out.println(airplane);
 
     JTextField textField = new JTextField();
